@@ -1,0 +1,41 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: travels
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/travel
+    username: root
+    password: 112358
+    type: com.alibaba.druid.pool.DruidDataSource
+  data:
+    redis:
+      port: 6379
+      host: localhost
+      database: 0
+      jedis:
+        pool:
+          max-active: 8
+          max-wait: 1ms
+          max-idle: 4
+          min-idle: 0
+
+mybatis:
+  type-aliases-package: com.ggw.travel.entity
+
+logging:
+  level:
+    root: INFO
+    com.ggw.travel.dao: DEBUG
+
+pagehelper:
+  helper-dialect: mysql
+
+upload:
+  dir: D:\JavaEE\Travel\src\main\resources\static\img
+
+
+
+

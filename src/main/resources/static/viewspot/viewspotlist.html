@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        table{
+            width: 100%;
+            margin-bottom: 15px;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        th,td{
+            border: 1px solid #CBD6DE;
+            padding-left: 10px;
+            line-height: 28px;
+        }
+        th{
+            text-align: left;
+            background: linear-gradient(#edf2f5,#dce9f2,#edf2f5);
+            color:#467aa7;
+        }
+        tbody tr:nth-child(4n),tbody tr:nth-child(4n-1){
+            background: #f2f2f2;
+        }
+        #pages{
+            text-align: center;
+            padding: 8px 0;
+        }
+        .page{
+            min-width: 50px;
+            display: inline-block;
+        }
+        .viewspotimg{
+            width: 135px;
+            height: 135px;
+            margin-left: -10px;
+            display: block;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="wrap">
+            <div id="header">
+                <div style="float: right;padding-top: 24px">
+                    {{ currentDate }} &nbsp;&emsp;
+                    <a href="javascript:;" @click="handleLogOut" style="color:#fff;float: right">ログアウト</a>
+                </div>
+                <h1>さあ、夏の日本へ</h1>
+            </div>
+            <div id="header-bar"></div>
+            <div id="content">
+                <h2>イベント一覧</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th width="14%">ID</th>
+                            <th width="20%">イベント</th>
+                            <th width="12%">写真</th>
+                            <th width="16%">開催期間</th>
+                            <th width="10%">開始時間</th>
+                            <th width="10%">終了時間</th>
+                            <th width="18%">オペレーション</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template  v-for="spot in spots">
+                            <tr>
+                                <td rowspan="2"><span v-text="spot.id"/></td>
+                                <td rowspan="2"><span v-text="spot.spotName"/></td>
+                                <td><img :src="'data:image/png;base64,' + spot.picpath"  class="viewspotimg"></td>
+                                <td><span v-text="spot.peakSeason"/></td>
+                                <td><span v-text="spot.peakTicket"/></td>
+                                <td><span v-text="spot.lowTicket"/></td>
+                                <td style="text-align: center">
+                                    <a href="javascript:;" @click="handleDelete(spot.id)">削除</a><br>
+                                    <a :href="'updateviewspot.html?id=' + spot.id">編集</a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="5">
+                                    <div style="height: 56px;font-size: 14px;line-height: normal">
+                                        <b style="color:#467aa7">見どころ：</b><span v-text="spot.spotDesc"></span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template >
+                    </tbody>
+                </table>
+                <a :href="'addviewspot.html?id=' + provinceId"><button type="button">イベントを追加する</button></a>&emsp;
+                <a href="../province/provincelist.html">県一覧に戻る</a>
+                <div id="pages">
+                    <a href="#" class="page" v-on:click="getByPage(page.pageNum - 1)" v-if="page.pageNum > 1">&lt;前</a>
+                    <a href="#" class="page" v-for="pp in page.pages" v-text="pp" v-on:click="getByPage(pp)"></a>
+                    <a href="#" class="page" v-on:click="getByPage(page.pageNum + 1)" v-if="page.pageNum < page.pages">次&gt;</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+<script src="../js/vue.js"></script>
+<script src="../js/axios.min.js"></script>
+<script>
+    const app = new Vue({
+        el: "#app",
+        data: {
+            spots: [],
+            page: {
+                pageNum: 1,
+                pageSize: 3,
+                pages: 0,
+                total: 0,
+            },
+            provinceId: '',
+            currentDate: '',
+        },
+        methods: {
+            handleDelete(id) {
+                if (confirm("Really want to delete this spot?")) {
+                    axios.delete("/spots/" + id).then((res)=>{
+                        alert(res.data.msg);
+                        if (res.data.flag){
+                            location.reload();
+                        }
+                    })
+                }
+            },
+            getByPage(pageToGo) {
+                this.page.pageNum = pageToGo;
+                const urlParams = new URLSearchParams(window.location.search);
+                this.provinceId = urlParams.get('id');
+                const _this = this;
+                axios.get("/spots/" + this.page.pageNum + "/"
+                    + this.page.pageSize + "?provId=" + this.provinceId).then((res)=>{
+                    _this.page.pageNum = res.data.data.pageNum;
+                    _this.page.pageSize = res.data.data.pageSize;
+                    _this.page.pages = res.data.data.pages;
+                    _this.page.total = res.data.data.total;
+                    _this.spots = res.data.data.list;
+                })
+                console.log(this.spots);
+            },
+            handleLogOut() {
+                localStorage.removeItem("session-id");
+                axios.delete("/user/logout").then((res)=>{
+                    alert(res.data.msg);
+                    if (res.data.flag){
+                        location.href = '../login.html';
+                    }
+                })
+            }
+        },
+        created() {
+            this.getByPage(this.page.pageNum);
+        },
+        mounted() {
+            var today = new Date();
+            var dateString = today.toLocaleDateString();
+            this.currentDate = dateString;
+        },
+
+    });
+</script>

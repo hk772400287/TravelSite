@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        form{
+            width:270px;
+        }
+        input{
+            width: 64%;
+            background: #eee;
+        }
+        input:focus{
+            background: #fff;
+        }
+        form{
+            padding: 0 12px 12px;
+        }
+        label{
+            display: block;
+            padding-bottom:12px;
+        }
+        .label-text{
+            width: 36%;
+            float: left;
+        }
+        #img-show{
+            width: 135px;
+            height: 135px;
+            display: block;
+            margin: 0 auto;
+            object-fit: cover;
+        }
+    </style>
+    <script>
+        function imgfileChange() {
+            var img_show = document.getElementById("img-show");
+            var imgfile = document.getElementById("imgfile");
+
+            var freader = new FileReader();
+            freader.readAsDataURL(imgfile.files[0]);
+            freader.onload = function (e) {
+                img_show.src = e.target.result;
+            };
+        }
+    </script>
+</head>
+<body>
+    <div id="app">
+        <div id="wrap">
+            <div id="header">
+                <div style="float: right;padding-top: 24px">{{ currentDate }}</div>
+                <h1>さあ、夏の日本へ</h1>
+            </div>
+            <div id="header-bar"></div>
+            <div id="content" style="height: 480px">
+                <img src="../img/Hanabi.jpg" style="float: right;height: 320px">
+                <h2>イベントを編集する</h2>
+                <form action="viewspotlist.html" method="post">
+                    <label>
+                        <div class="label-text">イベント：</div>
+                        <input type="text" name="vname" v-model="spot.spotName">
+                    </label>
+                    <label>
+                        <div class="label-text">写真：</div>
+                        <div style="text-align: center;padding-left: 36%">
+                            <img :src="src" alt="" id="img-show">
+                            <input type="file" id="imgfile" ref="fileInput" style="display: none" onchange="imgfileChange()">
+                        </div>
+                    </label>
+                    <label>
+                        <div class="label-text">開催期間：</div>
+                        <input type="text" name="hottime" v-model="spot.peakSeason">
+                    </label>
+                    <label>
+                        <div class="label-text">開始時間：</div>
+                        <input type="text" name="hotprice" v-model="spot.peakTicket">
+                    </label>
+                    <label>
+                        <div class="label-text">終了時間：</div>
+                        <input type="text" name="normalprice" v-model="spot.lowTicket">
+                    </label>
+                    <label>
+                        <div class="label-text">見どころ：</div>
+                        <input type="text" name="normalprice" v-model="spot.spotDesc">
+                    </label>
+                    <label>
+                        <div class="label-text">所在県：</div>
+                        <select name="ofprovince" v-model="provinceId" >
+                            <option v-for="province in provinces" :value="province.id" v-text="province.provName"></option>
+                        </select>
+                    </label>
+                    <button type="button" @click="updateInfo">編集する</button>&emsp;
+                    <a :href="'viewspotlist.html?id=' + provinceId">戻る</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+<script src="../js/vue.js"></script>
+<script src="../js/axios.min.js"></script>
+<script>
+    const app = new Vue({
+        el: "#app",
+        data: {
+            spot: {},
+            provinces: [],
+            provinceId: '',
+            src: '',
+            currentDate: '',
+        },
+        methods: {
+            getSpotInfo() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const spotId = urlParams.get('id');
+                console.log(spotId);
+                const _this = this;
+                axios.get("/spots/" + spotId).then((res)=>{
+                    if (res.data.flag) {
+                        _this.spot = res.data.data;
+                        _this.src = "data:image/png;base64," + _this.spot.picpath;
+                        _this.provinceId = _this.spot.province.id;
+                    } else {
+                        alert(res.data.msg);
+                    }
+                })
+            },
+            getAllProvinces() {
+                var _this = this;
+                axios.get("/provinces/1/50").then((res)=>{
+                    _this.provinces = res.data.data.list;
+                })
+            },
+            updateInfo() {
+                const pic = this.$refs.fileInput.files[0];
+                const formData = new FormData();
+                if (pic !== undefined) {
+                    formData.append('pic', pic);
+                } else {
+                    formData.append('picpath', this.spot.picpath);
+                }
+                formData.append('id', this.spot.id);
+                formData.append('spotName', this.spot.spotName);
+                formData.append('peakSeason', this.spot.peakSeason);
+                formData.append('peakTicket', this.spot.peakTicket);
+                formData.append('lowTicket', this.spot.lowTicket);
+                formData.append('spotDesc', this.spot.spotDesc);
+                formData.append('provinceId', this.provinceId);
+                axios({
+                    method: 'put',
+                    url: '/spots',
+                    data: formData,
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                }).then((res) => {
+                    if (res.data.flag) {
+                        alert(res.data.msg);
+                        location.href = "viewspotlist.html?id=" + this.provinceId;
+                    } else {
+                        alert('Adding failed');
+                    }
+                })
+            }
+
+        },
+        created() {
+            this.getAllProvinces();
+            this.getSpotInfo();
+        },
+        mounted() {
+            var today = new Date();
+            var dateString = today.toLocaleDateString();
+            this.currentDate = dateString;
+        },
+
+    });
+</script>

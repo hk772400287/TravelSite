@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        form{
+            width:270px;
+        }
+        input{
+            width: 70%;
+            background: #eee;
+        }
+        input:focus{
+            background: #fff;
+        }
+        form{
+            padding: 0 12px 12px;
+        }
+        label{
+            display: block;
+            padding-bottom:12px;
+        }
+        .label-text{
+            width: 30%;
+            float: left;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="wrap">
+            <div id="header">
+                <div style="float: right;padding-top: 24px">{{ currentDate }}</div>
+                <h1>さあ、夏の日本へ</h1>
+            </div>
+            <div id="header-bar"></div>
+            <div id="content" style="height: 360px">
+                <img src="../img/Hanabi.jpg" style="float: right;height: 320px">
+                <h2>県を編集する</h2>
+                <form action="provincelist.html" method="post">
+                    <label>
+                        <div class="label-text">県名：</div>
+                        <input type="text" name="pname"  v-model="province.provName">
+                    </label>
+                    <label>
+                        <div class="label-text">代表するイベント：</div>
+                        <input type="text" name="ptag"  v-model="province.tags">
+                    </label>
+                    <button type="button" @click="handleUpdate()">完了</button>&emsp;
+                    <a href="provincelist.html">戻る</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+<script src="../js/vue.js"></script>
+<script src="../js/axios.min.js"></script>
+<script>
+    const app = new Vue({
+        el: "#app",
+        data: {
+            province:{},
+            currentDate: '',
+        },
+        methods: {
+            handleUpdate() {
+                axios.put("/provinces", this.province).then((res)=>{
+                    alert(res.data.msg);
+                    if (res.data.flag){
+                        location.href = "provincelist.html";
+                    }
+                })
+            },
+            getProvinceInfo() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const id = urlParams.get('id');
+                const _this = this;
+                axios.get("/provinces/" + id).then((res)=>{
+                    if (res.data.flag) {
+                        _this.province = res.data.data;
+                    }
+                })
+            }
+        },
+        created() {
+            this.getProvinceInfo();
+        },
+        mounted() {
+            var today = new Date();
+            var dateString = today.toLocaleDateString();
+            this.currentDate = dateString;
+        },
+
+    });
+</script>

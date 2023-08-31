@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        form{
+            width:270px;
+        }
+        input{
+            width: 60%;
+            background: #eee;
+        }
+        input:focus{
+            background: #fff;
+        }
+        form{
+            padding: 0 12px 12px;
+        }
+        label{
+            display: block;
+            padding-bottom:12px;
+        }
+        .label-text{
+            width: 40%;
+            float: left;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div id="wrap">
+        <div id="header">
+            <h1>さあ、夏の日本へ</h1>
+        </div>
+        <div id="header-bar"></div>
+        <div id="content" style="height: 360px">
+            <img src="img/Hanabi.jpg" style="float: right;height: 320px">
+            <h2>ログイン</h2>
+            <form action="province/provincelist.html" method="post">
+                <label>
+                    <div class="label-text">アカウント：</div>
+                    <input type="text" name="username" v-model="user.username">
+                </label>
+                <label>
+                    <div class="label-text">パスワード：</div>
+                    <input type="password" name="password" v-model="user.password">
+                </label>
+                <button type="button" @click="submitInfo">ログイン</button>&emsp;
+                &nbsp;<a href="reg.html">サインアップ</a>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+<script src="./js/vue.js"></script>
+<script src="./js/axios.min.js"></script>
+<script>
+    const app = new Vue({
+        el: "#app",
+        data: {
+            user: {},
+
+        },
+        methods: {
+            submitInfo() {
+                if (!this.user.username) {
+                    alert("Username can not be empty");
+                    return;
+                }
+                axios.post("/user/login", this.user).then((res)=>{
+                    if (res.data.flag) {
+                        const headers = res.headers;
+                        const sessionID = headers['session-id'];
+                        localStorage.setItem("session-id", sessionID);
+                        var date = new Date();
+                        date.setTime(date.getTime() + (60 * 60 * 1000));
+                        var expirationDate = date.toUTCString();
+                        document.cookie = "session-id=" + sessionID + "; expires=" + expirationDate + "; path=/";
+                        alert(res.data.msg);
+                        location.href = './province/provincelist.html?session-id=' + sessionID;
+                    } else {
+                        alert(res.data.msg);
+                    }
+                })
+            }
+        }
+
+    });
+</script>

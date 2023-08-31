@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        form{
+            width:320px;
+        }
+        input{
+            width: 60%;
+            background: #eee;
+        }
+        input:focus{
+            background: #fff;
+        }
+        form{
+            padding: 0 12px 12px;
+        }
+        label{
+            display: block;
+            padding-bottom:12px;
+        }
+        #img-vcode{
+            width: 56px;
+            height: 21px;
+            float:right;
+            position: relative;
+        }
+        .label-text{
+            width: 40%;
+            float: left;
+        }
+        .vcode-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .vcode-container label {
+            width: 40%;
+            float: left;
+            margin-right: 10px;
+        }
+
+        .vcode-container input {
+            width: 60%;
+            margin-left: 23px;
+        }
+
+
+    </style>
+</head>
+<body>
+<div id="app">
+    <div id="wrap">
+        <div id="header">
+            <h1>さあ、夏の日本へ</h1>
+        </div>
+        <div id="header-bar"></div>
+        <div id="content" style="height: 360px">
+            <img src="img/Hanabi.jpg" style="float: right;height: 320px">
+            <h2>サインアップ</h2>
+            <form action="province/provincelist.html" method="post">
+                <label>
+                    <div class="label-text">アカウント：</div>
+                    <input type="text" v-model="user.username" name="username">
+                </label>
+                <label>
+                    <div class="label-text">パスワード：</div>
+                    <input type="password" v-model="user.password" name="password">
+                </label>
+                <label>
+                    <div class="label-text">メ ー ル：</div>
+                    <input type="text" v-model="user.email" name="email">
+                </label>
+                <img :src="src" id="img-vcode" :key="timeStamp" @click="changeImage">
+                <label class="vcode-container">
+                    <div class="label-text">認証コード：</div>
+                    <input type="text" v-model="code" name="vcode" style="width: 100px">
+                </label>
+                <button type="button" @click="submitUserInfo">サインアップ</button>&emsp;
+                &nbsp;<a href="login.html">ログイン</a>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+<script src="./js/vue.js"></script>
+<script src="./js/axios.min.js"></script>
+<script>
+    const app = new Vue({
+        el: "#app",
+        data: {
+            user: {},
+            code: "",
+            src: "",
+            timeStamp: "",
+        },
+        methods: {
+            submitUserInfo() {
+                if (!this.user.username) {
+                    alert("Username can not be empty");
+                    return;
+                }
+                axios.post("/user/register?code=" + this.code + "&timeStamp=" + this.timeStamp, this.user).then((res)=>{
+                    if(res.data.flag) {
+                        alert(res.data.msg);
+                        location.href = './login.html';
+                    } else {
+                        alert(res.data.msg);
+                    }
+                });
+            },
+            getImage() {
+                var _this = this;
+                axios.get("/user/getImage").then((res)=>{
+                    _this.src = "data:image/png;base64," + res.data.data.image;
+                    _this.timeStamp = res.data.data.getTimeStamp;
+                });
+            },
+            changeImage() {
+                this.getImage();
+            }
+        },
+        created() {
+            this.getImage();
+        }
+    });
+</script>

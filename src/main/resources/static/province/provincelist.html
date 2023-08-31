@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        table{
+            width: 100%;
+            margin-bottom: 15px;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        th,td{
+            border: 1px solid #CBD6DE;
+            padding-left: 10px;
+            line-height: 28px;
+        }
+        th{
+            text-align: left;
+            background: linear-gradient(#edf2f5,#dce9f2,#edf2f5);
+            color:#467aa7;
+        }
+        tbody tr:nth-child(even){
+            background: #f2f2f2;
+        }
+        #pages{
+            text-align: center;
+            padding-top: 8px;
+        }
+        .page{
+            min-width: 50px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div id="wrap">
+        <div id="header">
+            <div style="float: right;padding-top: 24px">
+                {{ currentDate }} &nbsp;
+                <a href="javascript:;" @click="handleLogOut" style="color:#fff;float: right">ログアウト</a>
+            </div>
+            <h1>さあ、夏の日本へ</h1>
+        </div>
+        <div id="header-bar"></div>
+        <div id="content" style="height: 360px">
+            <h2>全ての県</h2>
+            <table>
+                <thead>
+                <tr>
+                    <th width="15%">ID</th>
+                    <th width="20%">県名</th>
+                    <th width="25%">代表イベント</th>
+                    <th width="15%">イベント数</th>
+                    <th width="25%">オペレーション</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="province in provinces">
+                    <td v-text="province.id"></td>
+                    <td v-text="province.provName"></td>
+                    <td v-text="province.tags"></td>
+                    <td v-text="province.spotsCount"></td>
+                    <td>
+                        <a href="javascript:;" @click="handleDelete(province.id)">削除</a>
+                        <a :href="'../viewspot/viewspotlist.html?id=' + province.id">イベント一覧</a>
+                        <a :href="'updateprovince.html?id=' + province.id">編集</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <a href="addprovince.html">
+                <button type="button">県を追加する</button>
+            </a>
+            <div id="pages">
+                <a href="#" class="page" v-on:click="getByPage(page.pageNum - 1)" v-if="page.pageNum > 1">&lt;前</a>
+                <a href="#" class="page" v-for="pp in page.pages" v-text="pp" v-on:click="getByPage(pp)"></a>
+                <a href="#" class="page" v-on:click="getByPage(page.pageNum + 1)" v-if="page.pageNum < page.pages">次&gt;</a>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+<script src="../js/vue.js"></script>
+<script src="../js/axios.min.js"></script>
+<script>
+    const app = new Vue({
+        el: "#app",
+        data: {
+            provinces:[],
+            page: {
+                pageNum: 1,
+                pageSize: 5,
+                pages: 0,
+                total: 0,
+            },
+            currentDate: '',
+        },
+        methods: {
+            handleDelete(id) {
+                if (confirm("Really want to delete this province?")) {
+                    axios.delete("/provinces/" + id).then((res)=>{
+                        alert(res.data.msg);
+                        if (res.data.flag){
+                            this.getByPage(this.page.pageNum);
+                        }
+                    })
+                }
+            },
+            getByPage(pageToGo) {
+                this.page.pageNum = pageToGo;
+                const _this = this;
+                axios.get("/provinces/" + this.page.pageNum + "/"
+                     + this.page.pageSize).then((res)=>{
+                    _this.page.pageNum = res.data.data.pageNum;
+                    _this.page.pageSize = res.data.data.pageSize;
+                    _this.page.pages = res.data.data.pages;
+                    _this.page.total = res.data.data.total;
+                    _this.provinces = res.data.data.list;
+                })
+            },
+            handleLogOut() {
+                localStorage.removeItem("session-id");
+                axios.delete("/user/logout").then((res)=>{
+                    alert(res.data.msg);
+                    if (res.data.flag){
+                        location.href = '../login.html';
+                    }
+                })
+            }
+
+        },
+        mounted() {
+            var today = new Date();
+            var dateString = today.toLocaleDateString();
+            this.currentDate = dateString;
+        },
+        created() {
+            this.getByPage(this.page.pageNum);
+        }
+
+    });
+</script>
